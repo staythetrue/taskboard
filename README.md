@@ -56,7 +56,9 @@ taskboard/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── settings.xml
-└── .github/workflows/ci.yml
+└── .github/workflows/
+    ├── ci.yml                      # 持续集成
+    └── cd.yml                      # 持续部署(自托管 Runner)
 ```
 
 **依赖方向严格单向**:`controller → service → mapper`。
@@ -93,7 +95,7 @@ cd taskboard
 mvn clean spring-boot:run
 ```
 
-### 方式 B:项目自带数据库
+### 方式 B:项目自带数据库(容器版,端口 8081)
 
 ```bash
 cd taskboard
@@ -101,10 +103,16 @@ docker compose up -d --build
 docker compose ps
 ```
 
+容器版映射到 **8081**,本地 jar 的 8080 可以同时跑,互不冲突。
+
 ### 验证
 
 ```bash
+# 本地 jar
 curl http://localhost:8080/actuator/health
+
+# 容器版
+curl http://localhost:8081/actuator/health
 ```
 
 ---
@@ -302,6 +310,12 @@ docker history taskboard:v1
 - `<finalName>app</finalName>` 固定产物名
 
 CI:先 `mvn verify`,通过后再构建镜像推 GHCR(`latest` + `commit sha` 双标签)。
+
+CD(`.github/workflows/cd.yml`):在**自托管 Runner**(你自己的电脑)上执行
+`docker pull` 指定 sha 的镜像 → `docker compose up -d --no-build` → 健康检查
+`http://localhost:8081/actuator/health`。
+
+详细操作步骤见仓库外的 `CI-CD-实操指引.md`。
 
 ---
 
