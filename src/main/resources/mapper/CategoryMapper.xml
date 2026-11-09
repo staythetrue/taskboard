@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.taskboard.mapper.CategoryMapper">
+
+    <!-- GROUP BY 聚合。LEFT JOIN 保证没有任务的分类也会出现(数量为 0) -->
+    <select id="selectCategoryStats" resultType="com.demo.taskboard.dto.CategoryStatVO">
+        SELECT c.id         AS categoryId,
+               c.name       AS categoryName,
+               COUNT(t.id)  AS taskCount
+        FROM categories c
+        LEFT JOIN tasks t ON t.category_id = c.id
+        GROUP BY c.id, c.name, c.sort_no
+        ORDER BY c.sort_no ASC
+    </select>
+
+</mapper>

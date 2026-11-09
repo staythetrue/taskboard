@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.taskboard.mapper.TaskMapper">
+
+    <!--
+      association + notNullColumn:
+      category_id 为 null 时不会 new 出一个空 Category,而是保持 null。
+      不加 notNullColumn 的话,左连接没匹配到分类也会得到一个"空对象",很容易 NPE。
+    -->
+    <resultMap id="TaskDetailMap" type="com.demo.taskboard.dto.TaskDetailVO">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="status" column="status"/>
+        <result property="priority" column="priority"/>
+        <result property="createdAt" column="created_at"/>
+        <association property="category"
+                     javaType="com.demo.taskboard.domain.Category"
+                     notNullColumn="category_id">
+            <id property="id" column="category_id"/>
+            <result property="name" column="category_name"/>
+        </association>
+    </resultMap>
+
+    <select id="selectTaskPage" resultMap="TaskDetailMap">
+        SELECT t.id,
+               t.title,
+               t.description,
+               t.status,
+               t.priority,
+               t.created_at,
+               c.id   AS category_id,
+               c.name AS category_name
+        FROM tasks t
+        LEFT JOIN categories c ON c.id = t.category_id
+        <where>
+            <!-- #{} 会编译成占位符 ?,由驱动做参数绑定,天然防注入 -->
+            <if test="keyword != null and keyword != ''">
+                AND t.title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+            <if test="categoryId != null">
+                AND t.category_id = #{categoryId}
+            </if>
+        </where>
+        <!-- ${} 是字符串直接拼接,有注入风险。这里的值由服务层白名单校验,只能是固定列名 -->
+        ORDER BY ${orderBy}
+    </select>
+
+</mapper>
