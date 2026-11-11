@@ -43,7 +43,7 @@ pipeline {
             steps {
                 sh '''
                     for i in $(seq 1 30); do
-                        if curl -sf http://host.docker.internal:8081/actuator/health | grep -q UP; then
+                        if curl -sf http://host.docker.internal:8090/actuator/health | grep -q UP; then
                             echo "部署成功,应用健康"
                             exit 0
                         fi
