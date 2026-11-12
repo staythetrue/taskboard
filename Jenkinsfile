@@ -30,6 +30,23 @@ pipeline {
             }
         }
 
+        stage('质量门禁') {
+            steps {
+                sh '''
+                    SIZE=$(docker image inspect "$IMAGE" --format "{{.Size}}")
+                    MB=$((SIZE / 1024 / 1024))
+                    echo "镜像体积: ${MB} MB"
+
+                    LIMIT=700
+                    if [ "$MB" -gt "$LIMIT" ]; then
+                        echo "镜像体积 ${MB} MB 超过阈值 ${LIMIT} MB，终止发布"
+                        exit 1
+                    fi
+                    echo "门禁通过，阈值 ${LIMIT} MB"
+                '''
+            }
+        }
+
         stage('部署') {
             steps {
                 sh '''
