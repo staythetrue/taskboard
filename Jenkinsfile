@@ -37,7 +37,7 @@ pipeline {
                     MB=$((SIZE / 1024 / 1024))
                     echo "镜像体积: ${MB} MB"
 
-                    LIMIT=700
+                    LIMIT=500
                     if [ "$MB" -gt "$LIMIT" ]; then
                         echo "镜像体积 ${MB} MB 超过阈值 ${LIMIT} MB，终止发布"
                         exit 1
