@@ -17,7 +17,7 @@ public class HomeController {
     public ApiResponse<Map<String, Object>> index() {
         return ApiResponse.ok(Map.of(
                 "service", "taskboard",
-                "version", "1.0.0",
+                "version", "2.0.0",
                 "health", "/actuator/health",
                 "endpoints", List.of(
                         "GET    /api/v1/tasks?keyword=&status=&page=1&size=10",
