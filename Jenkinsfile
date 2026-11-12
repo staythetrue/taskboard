@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['test', 'prod'], description: '目标环境')
+    }
+
     options {
         timestamps()
         timeout(time: 20, unit: 'MINUTES')
@@ -10,6 +14,9 @@ pipeline {
     environment {
         IMAGE = "taskboard:${env.BUILD_NUMBER}"
         MAVEN_SETTINGS = '/opt/maven-settings.xml'
+        APP_PORT = "${params.ENVIRONMENT == 'prod' ? '8091' : '8090'}"
+        SPRING_PROFILE = "${params.ENVIRONMENT}"
+
     }
 
     stages {
@@ -47,20 +54,36 @@ pipeline {
             }
         }
 
-        stage('部署') {
+        stage('环境校验') {
             steps {
-                sh '''
-                    set -e
-                    APP_IMAGE="$IMAGE" docker compose up -d --no-build
-                '''
+                script {
+                    if (!(params.ENVIRONMENT in ['test', 'prod'])) {
+                        error "非法环境: ${params.ENVIRONMENT}"
+                    }
+                    echo "目标环境 ${params.ENVIRONMENT}，端口 ${env.APP_PORT}"
+                }
             }
         }
+
+        stage('生产确认') {
+            when { expression { params.ENVIRONMENT == 'prod' } }
+            steps {
+                input message: "确认发布到生产环境？镜像 ${env.IMAGE}", ok: '确认发布'
+            }
+        }
+
+        stage('部署') {
+            steps {
+                sh 'APP_IMAGE="$IMAGE" APP_PORT="$APP_PORT" docker compose up -d --no-build'
+            }
+        }
+
 
         stage('健康检查') {
             steps {
                 sh '''
                     for i in $(seq 1 30); do
-                        if curl -sf http://host.docker.internal:8090/actuator/health | grep -q UP; then
+                            if curl -sf "http://host.docker.internal:${APP_PORT}/actuator/health" | grep -q UP; then
                             echo "部署成功,应用健康"
                             exit 0
                         fi
